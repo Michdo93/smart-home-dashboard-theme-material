@@ -8,21 +8,37 @@
 import { createController } from "../js/controller.js";
 import { baseType, isControl } from "../js/widgets.js";
 import { formatState, hsbToCss, numberOf } from "../js/format.js";
-import { locale, setLanguage, t } from "../js/i18n.js";
+import { language, languages, locale, setLanguage, t } from "../js/i18n.js";
+import { openDialog } from "../js/dialog.js";
+import { openHistory } from "../js/history.js";
+import { setupLock } from "../js/lock.js";
 
 const config = window.DASHBOARD_CONFIG;
 const params = new URLSearchParams(location.search);
 const $ = (selector) => document.querySelector(selector);
 
+// ─── Einstellungen merken (gleiche Schlüssel wie das Dashboard) ─────────────
+function gemerkt(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function merken(key, value) {
+  try { localStorage.setItem(key, value); } catch { /* privates Fenster */ }
+}
+
 // ─── Farben: Material leitet alle Töne aus einer Grundfarbe ab ──────────────
 const MARKE = config.brandColor ?? "#c97a00";
+const GRUNDFARBEN = [["Marke", MARKE], ["Blau", "#0b6bcb"], ["Grün", "#2e7d32"],
+  ["Pink", "#d81b60"], ["Violett", "#6750a4"]];
 const dunkel = matchMedia("(prefers-color-scheme: dark)");
-await ui("theme", MARKE);
-ui("mode", dunkel.matches ? "dark" : "light");
-dunkel.addEventListener("change",
-  () => ui("mode", dunkel.matches ? "dark" : "light"));
+let grundfarbe = gemerkt("md-farbe") ?? MARKE;
+let modus = gemerkt("mode") ?? "auto";      // auto, light oder dark
+const hellDunkel = () => ui("mode", modus === "auto"
+  ? (dunkel.matches ? "dark" : "light") : modus);
+await ui("theme", grundfarbe);
+hellDunkel();
+dunkel.addEventListener("change", hellDunkel);
 
-setLanguage(params.get("lang") ?? config.language ?? "de");
+setLanguage(params.get("lang") ?? gemerkt("lang") ?? config.language ?? "de");
 document.title = `${config.title} · Material`;
 $("#titel").textContent = config.title;
 
@@ -157,8 +173,30 @@ function bedienelement(item) {
   return anzeige(item);
 }
 
+const ZAHLEN = ["Number", "Dimmer", "Rollershutter"];
+
 function anzeige(item) {
-  const wert = el("span");
+  const typ = baseType(item);
+  if (typ === "Image") {
+    const bild = el("img", "bild");
+    bild.alt = item.label;
+    store.subscribe(item.name, (i) => {
+      bild.hidden = !String(i.state).startsWith("data:image");
+      if (!bild.hidden) bild.src = i.state;
+    });
+    return bild;
+  }
+  // Zahlen öffnen per Klick ihren Verlauf (wenn openHAB Verläufe liefert)
+  const verlauf = ZAHLEN.includes(typ) && controller.loadHistory;
+  const wert = el(verlauf ? "a" : "span", verlauf ? "link" : "");
+  if (verlauf) {
+    wert.href = "#";
+    wert.setAttribute("aria-label", `${item.label}: ${t("history")}`);
+    wert.addEventListener("click", (event) => {
+      event.preventDefault();
+      openHistory(item, controller.loadHistory);
+    });
+  }
   store.subscribe(item.name, (i) => (wert.textContent = formatState(i)));
   return wert;
 }
@@ -194,9 +232,10 @@ function uebersicht() {
     });
 }
 
+let aktuell = params.get("room") ?? "overview";
+
 function seiten() {
   const liste = [{ name: "overview", label: t("overview") }, ...controller.rooms()];
-  let aktuell = params.get("room") ?? "overview";
   const reiter = liste.map((seite) => {
     const a = el("a", "", seite.label);
     a.setAttribute("role", "tab");
@@ -222,11 +261,63 @@ function seiten() {
   zeigen(liste.find((seite) => seite.name === aktuell) ?? liste[0]);
 }
 
+// ─── Einstellungen: Sprache, Grundfarbe, hell oder dunkel ───────────────────
+
+function wahl(beschriftung, optionen, gewaehlt, aendern) {
+  const select = el("select", "", ...optionen.map(([wert, text]) =>
+    new Option(text, wert)));
+  select.value = gewaehlt;
+  select.setAttribute("aria-label", beschriftung);
+  select.addEventListener("change", () => aendern(select.value));
+  return el("div", "row wrap", el("div", "max", beschriftung),
+    el("div", "field border round", select, el("i", "", "arrow_drop_down")));
+}
+
+function einstellungen() {
+  openDialog(t("settings"),
+    wahl(t("language"), languages().map((l) => [l, l.toUpperCase()]),
+      language(), (wert) => {
+        merken("lang", wert);
+        setLanguage(wert);
+        for (const dialog of document.querySelectorAll("dialog")) dialog.close();
+        beschriften();
+        seiten();
+        einstellungen();
+      }),
+    wahl(t("theme"), GRUNDFARBEN.map(([name, farbe]) => [farbe, name]),
+      grundfarbe, async (wert) => {
+        grundfarbe = wert;
+        merken("md-farbe", wert);
+        await ui("theme", wert);
+        hellDunkel();
+      }),
+    wahl(t("mode"), [["auto", t("auto")], ["light", t("light")],
+      ["dark", t("dark")]], modus, (wert) => {
+      modus = wert;
+      merken("mode", wert);
+      hellDunkel();
+    }));
+}
+
+/** Texte der Kopfzeile in der aktuellen Sprache */
+function beschriften() {
+  $("#sperren").setAttribute("aria-label", t("lock"));
+  $("#einstellungen").setAttribute("aria-label", t("settings"));
+  uhr.tick?.();
+}
+
+const sperre = setupLock(config.lock);
+$("#sperren").hidden = !config.lock?.pin;
+$("#sperren").addEventListener("click", () => sperre.lock());
+$("#einstellungen").addEventListener("click", einstellungen);
+beschriften();
+
 function uhr() {
   const node = $("#uhr");
   const tick = () => (node.textContent = new Date().toLocaleTimeString(locale(),
     { hour: "2-digit", minute: "2-digit" }));
   tick();
+  uhr.tick = tick;
   setInterval(tick, 10000);
 }
 

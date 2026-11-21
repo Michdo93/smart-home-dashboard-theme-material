@@ -14,12 +14,51 @@
     button.circle { --_size: 44px; }
     .tabs > a { min-block-size: 44px; }
     .farben { display: flex; gap: 8px; flex-wrap: wrap; }
+    /* Auswahllisten so breit, dass auch „intern“ und „extern“ passen */
+    .field > select { min-inline-size: 9.5rem; }
+    .bild { max-inline-size: 96px; border-radius: 8px; }
+    /* Farben für das Verlaufsdiagramm (history.js liest sie) */
+    body { --accent: var(--primary); --muted: var(--on-surface-variant);
+      --line: var(--outline-variant); }
+    .dialog { inline-size: min(560px, calc(100% - 24px)); padding: 16px;
+      border-radius: 28px; background: var(--surface-container-high);
+      color: var(--on-surface); }
+    .dialog > header { display: flex; align-items: center; gap: 8px;
+      min-block-size: 44px; }
+    .dialog h2 { flex: 1; margin: 0; font-size: 1.25rem; }
+    .dialog .row { margin-block: 8px; }
+    .dialog-close { inline-size: 44px; block-size: 44px; padding: 0;
+      background: transparent; color: var(--on-surface); }
+    .chart { position: relative; block-size: 260px; }
+    .segmented { display: flex; gap: 6px; margin-block-end: 10px; }
+    .segmented button { flex: 1; margin: 0; }
+    .segmented button[aria-pressed="false"] { background: transparent;
+      color: var(--primary); border: 1px solid var(--outline); }
+    .hint { color: var(--on-surface-variant); font-size: .875rem; }
+    /* Sperrbildschirm aus ../js/lock.js */
+    .lock-screen { position: fixed; inset: 0; z-index: 200; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; background: var(--surface); color: var(--on-surface); }
+    .lock-screen[hidden] { display: none; }
+    .lock-title { margin: 0; font-size: 1.25rem; }
+    .lock-dots { margin: 0; min-block-size: 1.5em; letter-spacing: .4em;
+      color: var(--primary); }
+    .lock-pad { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; }
+    .lock-pad button { inline-size: 72px; min-inline-size: 0; block-size: 72px;
+      margin: 0; padding: 0;
+      border-radius: 50%; font-size: 1.5rem;
+      background: var(--surface-container-highest); color: var(--on-surface); }
+    .lock-pad button:disabled { visibility: hidden; }
     .farben button[aria-pressed="true"] { outline: 3px solid var(--primary); }
+    [hidden] { display: none !important; }
     #status { inline-size: .8rem; block-size: .8rem; border-radius: 50%; }
     #uhr { font-variant-numeric: tabular-nums; }
+    #titel { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; }
   </style>
   <!-- aus dem Dashboard: Bibliothek und Einstellungen -->
   <script src="../lib/openhab.min.js"></script>
+  <script src="../lib/chart.umd.min.js"></script>
   <script src="../config.js"></script>
   <script type="module" src="ansicht.js"></script>
 </head>
@@ -29,6 +68,8 @@
       <span id="status" class="surface-variant" role="img"></span>
       <h5 class="max" id="titel">…</h5>
       <time id="uhr" class="large-text"></time>
+      <button class="circle transparent" id="sperren" hidden><i>lock</i></button>
+      <button class="circle transparent" id="einstellungen"><i>settings</i></button>
     </nav>
   </header>
   <main class="responsive">

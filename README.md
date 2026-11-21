@@ -21,6 +21,17 @@
 - **Kein doppelter Code:** Controller, Store und Texte kommen aus dem Dashboard.
 - **Gestaltungsentscheidung statt Zwang:** Material kennt keinen Farbkreis – Farben werden aus sechs festen Tönen gewählt.
 
+## Funktionen
+
+Aus dem Dashboard übernommen (`../js/`):
+
+- **Einstellungen** (Zahnrad): Sprache (de, en, fr), Grundfarbe (Marke aus `config.js`, Blau, Grün, Pink, Violett), hell/dunkel/wie System. Gemerkt im Browser; Sprache und Modus gelten auch für die anderen Ansichten.
+- **Sperrbildschirm** (Schloss) mit der PIN aus `config.js` (`lock`).
+- **Verlaufsdiagramme**: Ein Klick auf einen Zahlenwert zeigt 6 h, 24 h oder 7 Tage (braucht Persistence, siehe Buch).
+- **Bilder** (`Image`-Items wie die Karte des Saugroboters) als Bild.
+
+Die eigenen Gerätemodule (Lampe, Thermostat, Wetter) sind der Standard-Ansicht vorbehalten.
+
 ## Installation
 
 Voraussetzung: das [Smart-Home-Dashboard](https://github.com/Michdo93/Smart-Home-Dashboard) ist installiert (Standard: `/etc/openhab/html/dashboard`) – ab der Fassung mit `js/controller.js`.
