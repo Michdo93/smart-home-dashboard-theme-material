@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart-Home-Dashboard · Material</title>
+  <link rel="stylesheet" href="beer.min.css">
+  <script type="module" src="beer.min.js"></script>
+  <script type="module" src="material-dynamic-colors.min.js"></script>
+  <style>
+    /* Spur und Schalter bleiben schmal, die Trefferfläche wird 44 px hoch */
+    .slider > input { block-size: 44px; }
+    .switch { block-size: 44px; }
+    button.circle { --_size: 44px; }
+    .tabs > a { min-block-size: 44px; }
+    .farben { display: flex; gap: 8px; flex-wrap: wrap; }
+    .farben button[aria-pressed="true"] { outline: 3px solid var(--primary); }
+    #status { inline-size: .8rem; block-size: .8rem; border-radius: 50%; }
+    #uhr { font-variant-numeric: tabular-nums; }
+  </style>
+  <!-- aus dem Dashboard: Bibliothek und Einstellungen -->
+  <script src="../lib/openhab.min.js"></script>
+  <script src="../config.js"></script>
+  <script type="module" src="ansicht.js"></script>
+</head>
+<body>
+  <header class="primary-container">
+    <nav>
+      <span id="status" class="surface-variant" role="img"></span>
+      <h5 class="max" id="titel">…</h5>
+      <time id="uhr" class="large-text"></time>
+    </nav>
+  </header>
+  <main class="responsive">
+    <div class="tabs scroll" id="raeume" role="tablist"></div>
+    <div class="grid" id="inhalt"></div>
+  </main>
+  <div class="snackbar error" id="hinweis"></div>
+</body>
+</html>
